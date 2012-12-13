@@ -715,7 +715,7 @@ class EELSSpectrum(Spectrum):
             q = -2 * np.imag(q) / (2*s_size)   
             q[1:s_size] = -q[1:s_size]        
             q = np.fft.fft(q)
-            Re=np.real(q[0:s_size])
+            Re=np.real(q[0:s_size]) + 1
             #Re=real(q)
             #Tail correction
              #vm=Re[s_size-1]

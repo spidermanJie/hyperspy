@@ -667,6 +667,73 @@ class EELSSpectrum(Spectrum):
             s.axes_manager.signal_axes[0].axis[np.newaxis,axis.size:]**(
             -pl.r.map['values'][...,np.newaxis]))
         return s
+    
+    def kramers_kronig_transform(self, zlp, iterations = 1):
+        """ Kramers-Kronig Transform applied to a SSD 
+        """
+        s = self.deepcopy()
+        
+        # Fix (must have possibility to be Image)
+        n = 2
+        
+        # Constants and units
+        me 		= 511.06            # Electron rest mass in [eV/c2]
+        m0		= 9.11e-31 	        # e- mass in pedestrian units [kg]
+        permi	= 8.854e-12         # Vaccum permittivity [F/m]
+        hbar	= 1.055e-34         # Reduced Plank constant [J·s]
+        c		= 3e8               # The fastest speed there is [m/s]
+        qe		= 1.602e-19         # Electron charge [C]
+        bohr	= 5.292e-2          # bohradius [nm]
+        pi      = 3.141593          # pi
+        
+        # Mapped params
+        E0   = s.mapped_parameters.TEM.beam_energy 
+        beta = s.mapped_parameters.TEM.EELS.collection_angle
+        axis = s.axes_manager.signal_axes[0]
+        epc = axis.scale
+        I0  = zlp.data.sum() # ZLP_removal_tool: Zero Loss Intensity
+        s_size = axis.size
+        zlp_size = zlp.axes_manager.signal_axes[0].size 
+        axisE = axis.axis
+        
+        # Kinetic definitions
+        T   = E0*(1+E0/2/me)/(1+E0/me)**2
+        TGT = E0*(2*me+E0)/(me+E0)
+        RK0 = 2590*(1+E0/me)*np.sqrt(2*T/me)
+        
+        for io in range(iterations):
+            # Normalize Im(-1/eps)
+            I   = s.data.sum()
+            Im = s.data / (np.log(1+(beta*TGT/axisE)**2))
+            K   = sum(Im/(axisE+1e-3))/(pi/2)/(1-1/n**2)*epc
+            Im = Im/K
+            # Thickness
+            te = 332.5*K*T/(I0*epc)
+            mfp = te/(I/I0)
+            # Reciprocal space
+            q = np.fft.fft(Im,2*s_size)
+            q = -2 * np.imag(q) / (2*s_size)   
+            q[1:s_size] = -q[1:s_size]        
+            q = np.fft.fft(q)
+            Re=np.real(q[0:s_size])
+            #Re=real(q)
+            #Tail correction
+             #vm=Re[s_size-1]
+             #Re[:(s_size-1)]=Re[:(s_size-1)]+1-(0.5*vm*((s_size-1) / (s_size*2-arange(0,s_size-1)))**2)
+             #Re[s_size:]=1+(0.5*vm*((s_size-1) / (s_size+arange(0,s_size)))**2)
+            # Epsilon appears
+            e1 = Re / (Re**2+Im**2)
+            e2 = Im / (Re**2+Im**2)
+            # Surface losses
+            Srfelf= 4*e2 / ((e1+1)**2+e2**2) - Im
+            ADEP= TGT / (axisE+0.5) * np.arctan(beta * TGT / axisE) - beta/1000 / (beta**2+axisE**2/TGT**2)
+            Srfint=2000*K*ADEP*Srfelf/RK0/te
+            s.data=self.data-Srfint
+            
+            # Characterize each iteration
+            print (io, (I/I0))
+        
+        return {'Re': Re, 'Im': Im, 'e1': e1, 'e2': e2}
         
 
         

@@ -26,6 +26,10 @@ from hyperspy.components import VolumePlasmonDrude, Lorentzian
 
 class Test1D:
     def setUp(self):
+        ''' To test the kramers_kronig_transform we need two 
+        EELSSpectrum instances. One will be the Drude bulk plasmon peak
+        the other a synthetic fake-ZLP.
+        '''
         # Create an empty spectrum
         s = EELSSpectrum({'data' : np.zeros((32,1024))})
         s.set_microscope_parameters(

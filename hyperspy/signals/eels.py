@@ -710,8 +710,42 @@ class EELSSpectrum(Spectrum):
             -pl.r.map['values'][...,np.newaxis]))
         return s
     
-    def kramers_kronig_transform(self, zlp, iterations = 1):
-        """ Kramers-Kronig Transform applied to a SSD 
+    def kramers_kronig_transform(self, zlp, iterations=1, n=1):
+        """ Kramers-Kronig Transform method for calculating the complex
+        dielectric function from a single scattering distribution(SSD). 
+        Uses a FFT method explained in the book by Egerton (see Notes).
+        The SSD is an EELSSpectrum instance containing low-loss EELS 
+        only from sigle inelastic scattering event. 
+        
+        That means that, if present, all the elastic scattering, plural 
+        scattering and other spurious effects, would have to be 
+        subtracted/deconvolved or treated in any way whatsoever. 
+        
+        The internal loop is devised to subtract surface to vaccumm 
+        energy loss effects.
+        
+        Parameters
+        ----------
+        zlp: EELSSpectrum
+            Must contain the zero loss peak corresponding to each input
+            SSD. It is used for normalization.
+        iterations: int
+            Number of the iterations for the internal loop. By default, 
+            set = 1.
+        n: float
+            The medium refractive index. Used for normalization of the 
+            SSD to obtain the energy loss function. 
+        
+        Returns
+        -------
+        eps: EELSSpectrum (complex)
+            The complex dielectric function results, 
+                $\epsilon = \epsilon_1 + i*\epsilon_2$,
+            contained in an EELSSpectrum made of complex numbers.
+        Notes
+        -----        
+        For details see: Egerton, R. Electron Energy-Loss 
+        Spectroscopy in the Electron Microscope. Springer-Verlag, 2011.
         """
         s = self.deepcopy()
         
@@ -719,70 +753,103 @@ class EELSSpectrum(Spectrum):
         n = 2
         
         # Constants and units
-        me 		= 511.06            # Electron rest mass in [eV/c2]
-        m0		= 9.11e-31 	        # e- mass in pedestrian units [kg]
-        permi	= 8.854e-12         # Vaccum permittivity [F/m]
-        hbar	= 1.055e-34         # Reduced Plank constant [J·s]
-        c		= 3e8               # The fastest speed there is [m/s]
-        qe		= 1.602e-19         # Electron charge [C]
-        bohr	= 5.292e-2          # bohradius [nm]
-        pi      = 3.141593          # pi
+        me 		= 511.06        # Electron rest mass in [eV/c2]
+        m0		= 9.11e-31  	# e- mass in pedestrian units [kg]
+        permi	= 8.854e-12     # Vaccum permittivity [F/m]
+        hbar	= 1.055e-34     # Reduced Plank constant [J·s]
+        c		= 3e8           # The fastest speed there is [m/s]
+        qe		= 1.602e-19     # Electron charge [C]
+        bohr	= 5.292e-2      # bohradius [nm]
+        pi      = 3.141592654   # Pie!
         
         # Mapped params
-        E0   = s.mapped_parameters.TEM.beam_energy 
+        e0   = s.mapped_parameters.TEM.beam_energy 
         beta = s.mapped_parameters.TEM.EELS.collection_angle
         axis = s.axes_manager.signal_axes[0]
         epc = axis.scale
-        I0  = zlp.data.sum() # ZLP_removal_tool: Zero Loss Intensity
         s_size = axis.size
         zlp_size = zlp.axes_manager.signal_axes[0].size 
         axisE = axis.axis
         
+        # ZLP_removal_tool: Zero Loss Intensity
+        i0 = zlp.data.sum(axis.index_in_array)
+        i0 = i0.reshape(
+                np.insert(i0.shape, axis.index_in_array, 1))
+        
+        slicer = s.axes_manager._get_data_slice(
+                [(axis.index_in_array,slice(None,s_size)),])
+        
         # Kinetic definitions
-        T   = E0*(1+E0/2/me)/(1+E0/me)**2
-        TGT = E0*(2*me+E0)/(me+E0)
-        RK0 = 2590*(1+E0/me)*np.sqrt(2*T/me)
+        t   = e0*(1+e0/2/me)/(1+e0/me)**2
+        tgt = e0*(2*me+e0)/(me+e0)
+        rk0 = 2590*(1+e0/me)*np.sqrt(2*t/me)
+        
+        # Progress bar is optional
+        pbar = hyperspy.misc.progressbar.progressbar(maxval=iterations)
         
         for io in range(iterations):
-            # Normalize Im(-1/eps)
-            I   = s.data.sum()
-            Im = s.data / (np.log(1+(beta*TGT/axisE)**2))
-            K   = sum(Im/(axisE+1e-3))/(pi/2)/(1-1/n**2)*epc
+            # Calculation of the ELF by normalization of the SSD
+            # Norm(SSD) = Imag(-1/epsilon) (Energy Loss Funtion, ELF)
+            I = s.data.sum(axis.index_in_array)
+            Im = s.data / (np.log(1+(beta*tgt/axisE)**2))
+            K = (Im[slicer]/(axisE+1e-3)).sum(axis.index_in_array)
+            K = (K/(pi/2)/(1-1/n**2)*epc).reshape(
+                    np.insert(K.shape, axis.index_in_array, 1))
             Im = Im/K
-            # Thickness
-            te = 332.5*K*T/(I0*epc)
-            mfp = te/(I/I0)
-            # Reciprocal space
-            q = np.fft.fft(Im,2*s_size)
+            # Thickness (and mean free path additionally)
+            te = 332.5*K*t/(i0*epc)
+            #mfp = te/(i/i0)
+
+            # Kramers Kronig Transform:
+            #  We calculate KKT(Im(-1/epsilon))=1+Re(1/epsilon) with FFT
+            #  Follows: D W Johnson 1975 J. Phys. A: Math. Gen. 8 490
+            q = np.fft.fft(Im, 2*s_size, axis.index_in_array)
             q = -2 * np.imag(q) / (2*s_size)   
-            q[1:s_size] = -q[1:s_size]        
-            q = np.fft.fft(q)
-            Re=np.real(q[0:s_size]) + 1
+            q[slicer] = -q[slicer]        
+            q = np.fft.fft(q, axis=axis.index_in_array)
+            # Final touch, we have Re(1/eps)
+            Re=np.real(q[slicer])
+            Re += 1
+        
+            # Egerton does this, but we'll skip
             #Re=real(q)
             #Tail correction
              #vm=Re[s_size-1]
              #Re[:(s_size-1)]=Re[:(s_size-1)]+1-(0.5*vm*((s_size-1) / (s_size*2-arange(0,s_size-1)))**2)
              #Re[s_size:]=1+(0.5*vm*((s_size-1) / (s_size+arange(0,s_size)))**2)
-            # Epsilon appears
+            
+            # Epsilon appears:
+            #  We calculate the real and imaginary parts of the CDF
             e1 = Re / (Re**2+Im**2)
             e2 = Im / (Re**2+Im**2)
-            # Surface losses
-            Srfelf= 4*e2 / ((e1+1)**2+e2**2) - Im
-            ADEP= TGT / (axisE+0.5) * np.arctan(beta * TGT / axisE) - beta/1000 / (beta**2+axisE**2/TGT**2)
-            Srfint=2000*K*ADEP*Srfelf/RK0/te
-            s.data=self.data-Srfint
             
-            # Characterize each iteration
-            print (io, (I/I0))
+            # Surface losses correction:
+            #  Calculates the surface ELF from a vaccumm border effect
+            #  A simulated surface plasmon is subtracted from the ELF
+            
+            Srfelf = 4*e2 / ((e1+1)**2+e2**2) - Im
+            adep = tgt / (axisE+0.5) * np.arctan(beta * tgt / axisE) - \
+                    beta/1000 / (beta**2+axisE**2/tgt**2)
+            Srfint = np.zeros(s.data.shape)
+            Srfint=2000*K*adep*Srfelf/rk0/te
+            s.data=self.data-Srfint
+            print 'Iteration number: ', io
         
-        return {'Re': Re, 'Im': Im, 'e1': e1, 'e2': e2}
+        pbar.finish()
+        
+        eps = self.deepcopy()
+        eps.data = e1 + 1j*e2
+        
+        eps.mapped_parameters.title = (s.mapped_parameters.title + 
+                                         'Complex Dielectric Fuction')
+        if eps.tmp_parameters.has_item('filename'):
+                eps.tmp_parameters.filename = (
+                    self.tmp_parameters.filename +
+                    '_CDF_after_Kramers_Kronig_transform')
+        
+        return eps
         
 
-        
- 
-        
-                        
-                      
 #    def build_SI_from_substracted_zl(self,ch, taper_nch = 20):
 #        """Modify the SI to have fit with a smoothly decaying ZL
 #        

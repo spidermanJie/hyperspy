@@ -710,7 +710,7 @@ class EELSSpectrum(Spectrum):
             -pl.r.map['values'][...,np.newaxis]))
         return s
     
-    def kramers_kronig_transform(self, zlp, iterations=1, n=1):
+    def kramers_kronig_transform(self, zlp, iterations=1, n=2):
         """ Kramers-Kronig Transform method for calculating the complex
         dielectric function from a single scattering distribution(SSD). 
         Uses a FFT method explained in the book by Egerton (see Notes).
@@ -731,7 +731,7 @@ class EELSSpectrum(Spectrum):
             SSD. It is used for normalization.
         iterations: int
             Number of the iterations for the internal loop. By default, 
-            set = 1.
+            set = 2.
         n: float
             The medium refractive index. Used for normalization of the 
             SSD to obtain the energy loss function. 
@@ -749,8 +749,11 @@ class EELSSpectrum(Spectrum):
         """
         s = self.deepcopy()
         
-        # Fix (must have possibility to be Image)
-        n = 2
+        # TODO List
+         # n is fixed (must have possibility to be an image, line ...)
+         # Must have some way to assess loop, like returning the mfp?
+         # Add tail correction capabilities (check Egerton code).
+        
         
         # Constants and units
         me 		= 511.06        # Electron rest mass in [eV/c2]
@@ -783,9 +786,6 @@ class EELSSpectrum(Spectrum):
         t   = e0*(1+e0/2/me)/(1+e0/me)**2
         tgt = e0*(2*me+e0)/(me+e0)
         rk0 = 2590*(1+e0/me)*np.sqrt(2*t/me)
-        
-        # Progress bar is optional
-        pbar = hyperspy.misc.progressbar.progressbar(maxval=iterations)
         
         for io in range(iterations):
             # Calculation of the ELF by normalization of the SSD
@@ -833,10 +833,8 @@ class EELSSpectrum(Spectrum):
             Srfint = np.zeros(s.data.shape)
             Srfint=2000*K*adep*Srfelf/rk0/te
             s.data=self.data-Srfint
-            print 'Iteration number: ', io
-        
-        pbar.finish()
-        
+            print 'Iteration number: ', io+1, '/', iterations
+                
         eps = self.deepcopy()
         eps.data = e1 + 1j*e2
         

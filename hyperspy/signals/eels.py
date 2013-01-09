@@ -839,7 +839,7 @@ class EELSSpectrum(Spectrum):
         eps.data = e1 + 1j*e2
         
         eps.mapped_parameters.title = (s.mapped_parameters.title + 
-                                         'Complex Dielectric Fuction')
+                                         ' Complex Dielectric Fuction')
         if eps.tmp_parameters.has_item('filename'):
                 eps.tmp_parameters.filename = (
                     self.tmp_parameters.filename +

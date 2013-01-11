@@ -795,7 +795,7 @@ class EELSSpectrum(Spectrum):
             K = (Im[slicer]/(axisE+1e-3)).sum(axis.index_in_array)
             K = (K/(pi/2)/(1-1/n**2)*epc).reshape(
                     np.insert(K.shape, axis.index_in_array, 1))
-            Im = Im/K
+            Im = (Im/K).astype('float32')
             # Thickness (and mean free path additionally)
             te = 332.5*K*t/(i0*epc)
             #mfp = te/(i/i0)

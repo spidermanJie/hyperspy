@@ -803,12 +803,12 @@ class EELSSpectrum(Spectrum):
             # Kramers Kronig Transform:
             #  We calculate KKT(Im(-1/epsilon))=1+Re(1/epsilon) with FFT
             #  Follows: D W Johnson 1975 J. Phys. A: Math. Gen. 8 490
-            q = np.fft.fft(Im, 2*s_size, axis.index_in_array)
+            q = np.fft.fft(Im, 2*s_size, axis.index_in_array).astype('complex64')
             q = -2 * np.imag(q) / (2*s_size)   
             q[slicer] = -q[slicer]        
-            q = np.fft.fft(q, axis=axis.index_in_array)
+            q = np.fft.fft(q, axis=axis.index_in_array).astype('complex64')
             # Final touch, we have Re(1/eps)
-            Re=np.real(q[slicer])
+            Re=np.real(q[slicer]).astype('float32')
             Re += 1
         
             # Egerton does this, but we'll skip

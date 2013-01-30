@@ -31,7 +31,7 @@ from scipy.optimize import (leastsq,fmin, fmin_cg, fmin_ncg, fmin_bfgs,
 from hyperspy import messages
 import hyperspy.drawing.spectrum
 from hyperspy.drawing.utils import on_figure_window_close
-from hyperspy.misc import progressbar
+from hyperspy.misc import progressbar, utils
 from hyperspy.signals.eels import EELSSpectrum, Spectrum
 from hyperspy.defaults_parser import preferences
 from hyperspy.axes import generate_axis
@@ -40,6 +40,8 @@ from hyperspy.decorators import interactive_range_selector
 from hyperspy.misc.mpfit.mpfit import mpfit
 
 from hyperspy.gui.tools import ComponentFit
+
+import matplotlib.pyplot as plt
 
 class Model(list):
     """Build and fit a model
@@ -1160,3 +1162,53 @@ class Model(list):
     def fit_all_components(self):
         for component in self:
             self.fit_component(component, signal_range="interactive")
+
+    def plot_components(self, components=None, filename=None):
+        """Plots one or several components in the model.
+
+        Parameters
+        ----------
+        components: {list of components, None}
+            If list of components, plots all the components in the list.
+            If None plots all the components in the model, which is the
+            default.
+        filename: {string, None}
+            If string, saves the plot to a file with name filename.
+            If None raise a window with the plot and return the figure.
+
+        Example:
+        --------
+        s = signals.Spectrum({'data':np.zeros(1000)})
+        g1 = components.Gaussian()
+        g2 = components.Gaussian()
+        g3 = components.Gaussian()
+        m = create_model(s)
+        m.append(g1)
+        m.append(g2)
+        m.append(g3)
+        m.plot_components() # To plot all components
+        m.plot_components([g1]) # Plot just g1
+        m.plot_components([g1,g2]) # Plot g1 and g2
+        m.plot_components([g1,g2], filename="test.png") # Save to file
+
+        """
+        axis = self.spectrum.axes_manager.signal_axes[0]
+
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        if components is None:
+            for component_ in self:
+                component_signal = component_.function(axis.axis)
+                component_spectrum = Spectrum({'data':component_signal})
+                component_spectrum.axes_manager.signal_axes[0] = axis
+                utils._make_mosaic_subplot(component_spectrum, ax)
+        elif type(components) == list:
+            for component_ in components:
+                component_signal = component_.function(axis.axis)
+                component_spectrum = Spectrum({'data':component_signal})
+                component_spectrum.axes_manager.signal_axes[0] = axis
+                utils._make_mosaic_subplot(component_spectrum, ax)
+        else:
+            #Raise some relevant error
+            print("Input must be in the form of a list of components:\
+                    m.plot_components([component1, component2])")

@@ -1694,8 +1694,11 @@ def plot_spectra(
     elif style == 'mosaic':
         #Need to find a way to automatically scale the figure size
         fig, subplots = plt.subplots(1, len(spectra))
-        for ax, spectrum in zip(subplots, spectra):
-            _make_mosaic_subplot(spectrum, ax)
+        if spectra.axes_manager.navigation_size == 0:
+            _make_mosaic_subplot(spectra, subplots)
+        else:
+            for ax, spectrum in zip(subplots, spectra):
+                _make_mosaic_subplot(spectrum, ax)
         if filename is None:
             return(fig)
         else:

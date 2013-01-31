@@ -1163,7 +1163,7 @@ class Model(list):
         for component in self:
             self.fit_component(component, signal_range="interactive")
 
-    def plot_components(self, components=None, filename=None):
+    def plot_components(self, components=None, plot_combined=False, filename=None):
         """Plots one or several components in the model.
 
         Parameters
@@ -1172,6 +1172,9 @@ class Model(list):
             If list of components, plots all the components in the list.
             If None plots all the components in the model, which is the
             default.
+        plot_combined: bool
+            Plots the sum of the components, in addition to the individual
+            components.
         filename: {string, None}
             If string, saves the plot to a file with name filename.
             If None raise a window with the plot and return the figure.
@@ -1196,18 +1199,21 @@ class Model(list):
 
         fig = plt.figure()
         ax = fig.add_subplot(111)
+        component_sum = np.zeros(axis.size) 
         if components is None:
             for component_ in self:
                 component_signal = component_.function(axis.axis)
                 component_spectrum = Spectrum({'data':component_signal})
                 component_spectrum.axes_manager.signal_axes[0] = axis
                 utils._make_mosaic_subplot(component_spectrum, ax)
+                component_sum += component_signal
         elif type(components) == list:
             for component_ in components:
                 component_signal = component_.function(axis.axis)
                 component_spectrum = Spectrum({'data':component_signal})
                 component_spectrum.axes_manager.signal_axes[0] = axis
                 utils._make_mosaic_subplot(component_spectrum, ax)
+                component_sum += component_signal
         else:
             #Raise some relevant error
             print("Input must be in the form of a list of components:\

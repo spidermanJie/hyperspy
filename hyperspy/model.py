@@ -1236,3 +1236,8 @@ class Model(list):
             
         if plot_spectrum:
             utils._make_mosaic_subplot(self.spectrum, ax)
+
+        if filename is None:
+            return(fig)
+        else:
+            fig.savefig(filename) 

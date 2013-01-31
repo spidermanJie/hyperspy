@@ -1161,7 +1161,8 @@ class Model(list):
         for component in self:
             self.fit_component(component, signal_range="interactive")
 
-    def plot_components(self, components=None, plot_combined=False, filename=None):
+    def plot_components(self, components=None, plot_combined=False,
+            plot_spectrum=False, filename=None):
         """Plots one or several components in the model.
 
         Parameters
@@ -1193,26 +1194,36 @@ class Model(list):
         m.plot_components([g1,g2], filename="test.png") # Save to file
 
         """
+        if not ((type(components) is list) or (components is None)):
+            #Raise some relevant error
+            print("Input must be in the form of a list of components:\
+                    m.plot_components([component1, component2])")
+            return
+
         axis = self.spectrum.axes_manager.signal_axes[0]
 
         fig = plt.figure()
         ax = fig.add_subplot(111)
-        component_sum = np.zeros(axis.size) 
+        component_signal_sum = np.zeros(axis.size) 
         if components is None:
             for component_ in self:
                 component_signal = component_.function(axis.axis)
                 component_spectrum = Spectrum({'data':component_signal})
                 component_spectrum.axes_manager.signal_axes[0] = axis
                 utils._make_mosaic_subplot(component_spectrum, ax)
-                component_sum += component_signal
-        elif type(components) == list:
+                component_signal_sum += component_signal
+        elif type(components) is list:
             for component_ in components:
                 component_signal = component_.function(axis.axis)
                 component_spectrum = Spectrum({'data':component_signal})
                 component_spectrum.axes_manager.signal_axes[0] = axis
                 utils._make_mosaic_subplot(component_spectrum, ax)
-                component_sum += component_signal
-        else:
-            #Raise some relevant error
-            print("Input must be in the form of a list of components:\
-                    m.plot_components([component1, component2])")
+                component_signal_sum += component_signal
+        
+        if plot_combined:
+            component_spectrum_sum = Spectrum({'data':component_signal_sum})
+            component_spectrum_sum.axes_manager.signal_axes[0] = axis
+            utils._make_mosaic_subplot(component_spectrum_sum, ax)
+            
+        if plot_spectrum:
+            utils._make_mosaic_subplot(self.spectrum, ax)

@@ -1289,3 +1289,22 @@ class Model(list):
             component_spectrum = Spectrum({'data':component_signal_sum})
             component_spectrum.axes_manager.signal_axes[0] = axis
             return(component_spectrum)
+
+    def save_as_file(self):
+        axis = self.axes_manager.signal_axes[0].axis 
+        model_dict = {}
+        for component in self:
+            component_dict = {}
+            component_dict = {}
+            component_dict['name'] = component.__dict__['name']
+            component_dict['type'] = component.__dict__['_id_name']
+            parameter_list_dict = {}
+            for parameter in v1.__dict__['parameters']:
+                parameter_dict = {}
+                parameter_dict['name'] = parameter.__dict__['name'] 
+                parameter_dict['map'] = parameter.__dict__['map']
+                parameter_list_dict[parameter.__dict__['name']] = parameter_dict
+            component_dict['parameters'] = parameter_list_dict
+            model_dict[component_dict['name'] + component_dict['type']] = component_dict
+            
+        return(model_dict)

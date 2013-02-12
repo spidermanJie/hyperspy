@@ -1350,6 +1350,10 @@ class Model(list):
         model_dict['components'] = component_list_dict
         model_dict['spectrum'] = self.spectrum.data
         model_dict['model_spectrum'] = self.generate_spectrum_from_components().data
+        model_dict['navigational_axis'] = self.axes_manager.navigation_axes[0].axis
+        model_dict['navigational_axis_units'] = self.axes_manager.navigation_axes[0].units
+        model_dict['signal_axis'] = self.axes_manager.signal_axes[0].axis
+        model_dict['signal_axis_units'] = self.axes_manager.signal_axes[0].units
 
 
         if filename is None:

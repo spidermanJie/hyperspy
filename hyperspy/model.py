@@ -1276,35 +1276,83 @@ class Model(list):
 
         axis = self.spectrum.axes_manager.signal_axes[0]
 
-        component_signal_sum = np.zeros(axis.size) 
         if components is None:
             for component_ in self:
-                component_signal_sum += component_.function(axis.axis)
-            component_spectrum = Spectrum({'data':component_signal_sum})
+                component_.active = True 
+            self.generate_data_from_model()
+            component_spectrum = Spectrum({'data':self.model_cube})
             component_spectrum.axes_manager.signal_axes[0] = axis
             return(component_spectrum)
         elif type(components) is list:
-            for component_ in components:
-                component_signal_sum += component_.function(axis.axis)
-            component_spectrum = Spectrum({'data':component_signal_sum})
+            for component_ in self:
+                if component_ in components:
+                    component_.active = True 
+                else:
+                    component_.active = False
+            self.generate_data_from_model()
+            component_spectrum = Spectrum({'data':self.model_cube})
             component_spectrum.axes_manager.signal_axes[0] = axis
             return(component_spectrum)
 
-    def save_as_file(self):
+#ONLY WORKS FOR A SINGLE SPECTRUM
+#        axis = self.spectrum.axes_manager.signal_axes[0]
+#
+#        component_signal_sum = np.zeros(axis.size) 
+#        if components is None:
+#            for component_ in self:
+#                component_signal_sum += component_.function(axis.axis)
+#            component_spectrum = Spectrum({'data':component_signal_sum})
+#            component_spectrum.axes_manager.signal_axes[0] = axis
+#            return(component_spectrum)
+#        elif type(components) is list:
+#            for component_ in components:
+#                component_signal_sum += component_.function(axis.axis)
+#            component_spectrum = Spectrum({'data':component_signal_sum})
+#            component_spectrum.axes_manager.signal_axes[0] = axis
+#            return(component_spectrum)
+
+    def get_model_as_dict(self, filename=None):
+        """Returns the spectrum, model and components in a dict.
+        If filename is supplied, the dictionary will be saved as a
+        numpy npz file.
+
+        Parameters:
+        -----------
+        filename: string, None (default)
+            If string will save the dictionary as a numpy npz file.
+
+        Example:
+        --------
+        model_dict = m.get_model_as_dict()
+
+        m.get_model_as_dict(filename="model_data.npz")
+            
+        """
+
         axis = self.axes_manager.signal_axes[0].axis 
-        model_dict = {}
+        model_dict = {}
+        component_list_dict = {}
         for component in self:
-            component_dict = {}
             component_dict = {}
             component_dict['name'] = component.__dict__['name']
             component_dict['type'] = component.__dict__['_id_name']
             parameter_list_dict = {}
-            for parameter in v1.__dict__['parameters']:
-                parameter_dict = {}
+            for parameter in component.__dict__['parameters']:
+                parameter_dict = {}
                 parameter_dict['name'] = parameter.__dict__['name'] 
                 parameter_dict['map'] = parameter.__dict__['map']
                 parameter_list_dict[parameter.__dict__['name']] = parameter_dict
             component_dict['parameters'] = parameter_list_dict
-            model_dict[component_dict['name'] + component_dict['type']] = component_dict
-            
-        return(model_dict)
+            component_dict['component_spectrum'] = self.generate_spectrum_from_components([component,]).data
+
+            component_list_dict[component_dict['name'] + component_dict['type']] = component_dict
+
+        model_dict['components'] = component_list_dict
+        model_dict['spectrum'] = self.spectrum.data
+        model_dict['model_spectrum'] = self.generate_spectrum_from_components().data
+
+
+        if filename is None:
+            return(model_dict)
+        else:
+            np.savez(filename, model_dict=model_dict)

@@ -1274,14 +1274,16 @@ class Model(list):
                     m.plot_components([component1, component2])")
             return
 
-        axis = self.spectrum.axes_manager.signal_axes[0]
+        signal_axis = copy.deepcopy(self.spectrum.axes_manager.signal_axes[0])
+        navigation_axis = copy.deepcopy(self.spectrum.axes_manager.navigation_axes[0])
 
         if components is None:
             for component_ in self:
                 component_.active = True 
             self.generate_data_from_model()
             component_spectrum = Spectrum({'data':self.model_cube})
-            component_spectrum.axes_manager.signal_axes[0] = axis
+            component_spectrum.axes_manager.signal_axes[0] = signal_axis
+            component_spectrum.axes_manager.navigation_axes[0] = navigation_axis
             return(component_spectrum)
         elif type(components) is list:
             for component_ in self:
@@ -1291,7 +1293,8 @@ class Model(list):
                     component_.active = False
             self.generate_data_from_model()
             component_spectrum = Spectrum({'data':self.model_cube})
-            component_spectrum.axes_manager.signal_axes[0] = axis
+            component_spectrum.axes_manager.signal_axes[0] = signal_axis
+            component_spectrum.axes_manager.navigation_axes[0] = navigation_axis
             return(component_spectrum)
 
 #ONLY WORKS FOR A SINGLE SPECTRUM
@@ -1360,3 +1363,30 @@ class Model(list):
             return(model_dict)
         else:
             np.savez(filename, model_dict=model_dict)
+
+    def plot_model_report(self, title='', filename=None, figsize=(10,10)):
+        figure, subplots = plt.subplots(1, 4, figsize=figsize)
+        
+        #Todo: 
+        #signal_axis not working for cascade_model
+        #add parameters to plot
+
+        cascade_spectrum = subplots[0]
+        utils._make_cascade_subplot(self.spectrum, cascade_spectrum)
+
+        cascade_model = subplots[1]
+        model_as_spectrum = self.generate_spectrum_from_components()
+        utils._make_cascade_subplot(model_as_spectrum, cascade_model)
+
+        error_subplot = subplots[3]
+        #Calculate the error
+        spectrum_difference = np.abs(model_as_spectrum.data-self.spectrum.data)**2
+        total_intensity = np.sum(self.spectrum.data, axis=1)
+        error_array = np.sqrt(np.sum(spectrum_difference, axis=1))/total_intensity
+        utils._plot_cascade_parameter(error_array, error_subplot) 
+
+        figure.suptitle(title)
+        if filename == None:
+            return(figure)
+        else:
+            figure.savefig(filename)

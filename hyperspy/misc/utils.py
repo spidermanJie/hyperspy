@@ -1630,11 +1630,11 @@ def _make_heatmap_subplot(spectra, ax):
     ax.set_xlabel(x_axis.units)
     return(ax)
 
-def _make_cascade_subplot(spectra, ax):
+def _make_cascade_subplot(spectra, ax, color='black'):
     if spectra.axes_manager.navigation_size == 0:
         x_axis = spectra.axes_manager.signal_axes[0]
         data = spectra.data
-        ax.plot(x_axis.axis, data)
+        ax.plot(x_axis.axis, data, color=color)
     else:
         max_value = 0 
         for spectrum in spectra:
@@ -1646,17 +1646,17 @@ def _make_cascade_subplot(spectra, ax):
             x_axis = spectrum.axes_manager.signal_axes[0]
             data = spectrum.data
             data_to_plot = data/float(max_value) + y_axis.axis[spectrum_index]
-            ax.plot(x_axis.axis, data_to_plot)
+            ax.plot(x_axis.axis, data_to_plot, color=color)
         ax.set_ylabel(y_axis.units)
 
     ax.set_xlim(x_axis.low_value, x_axis.high_value)
     ax.set_xlabel(x_axis.units)
     return(ax)
 
-def _make_mosaic_subplot(spectrum, ax):
+def _make_mosaic_subplot(spectrum, ax, color='black'):
     x_axis = spectrum.axes_manager.signal_axes[0]
     data = spectrum.data
-    ax.plot(x_axis.axis, data)
+    ax.plot(x_axis.axis, data, color=color)
     ax.set_xlim(x_axis.low_value, x_axis.high_value)
     ax.set_xlabel(x_axis.units)
     return(ax)

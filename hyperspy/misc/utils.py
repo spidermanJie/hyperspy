@@ -1832,6 +1832,11 @@ def plot_parameter_report(
             title="Gaussians")
     """
 
+    if parameter_plot_list == None:
+        parameter_plot_list = []
+        for parameter in component_list[0].parameters:
+            parameter_plot_list.append(parameter.name)
+
     number_of_parameters = len(parameter_plot_list)
     figure, subplots = plt.subplots(1, number_of_parameters, sharey=True,
             figsize=figsize)

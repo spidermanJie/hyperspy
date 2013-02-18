@@ -1280,22 +1280,17 @@ class Model(list):
         if components is None:
             for component_ in self:
                 component_.active = True 
-            self.generate_data_from_model()
-            component_spectrum = Spectrum({'data':self.model_cube})
-            component_spectrum.axes_manager.signal_axes[0] = signal_axis
-            component_spectrum.axes_manager.navigation_axes[0] = navigation_axis
-            return(component_spectrum)
         elif type(components) is list:
             for component_ in self:
                 if component_ in components:
                     component_.active = True 
                 else:
                     component_.active = False
-            self.generate_data_from_model()
-            component_spectrum = Spectrum({'data':self.model_cube})
-            component_spectrum.axes_manager.signal_axes[0] = signal_axis
-            component_spectrum.axes_manager.navigation_axes[0] = navigation_axis
-            return(component_spectrum)
+        self.generate_data_from_model()
+        component_spectrum = Spectrum({'data':self.model_cube})
+        component_spectrum.axes_manager.signal_axes[0] = signal_axis
+        component_spectrum.axes_manager.navigation_axes[0] = navigation_axis
+        return(component_spectrum)
 
 #ONLY WORKS FOR A SINGLE SPECTRUM
 #        axis = self.spectrum.axes_manager.signal_axes[0]
@@ -1365,11 +1360,14 @@ class Model(list):
             np.savez(filename, model_dict=model_dict)
 
     def plot_model_report(self, title='', filename=None, figsize=(10,10)):
-        figure, subplots = plt.subplots(1, 4, figsize=figsize)
+        figure, subplots = plt.subplots(2, 4, figsize=figsize)
         
         #Todo: 
         #signal_axis not working for cascade_model
         #add parameters to plot
+
+        signal_axis = copy.deepcopy(self.spectrum.axes_manager.signal_axes[0])
+        navigation_axis = copy.deepcopy(self.spectrum.axes_manager.navigation_axes[0])
 
         cascade_spectrum = subplots[0]
         utils._make_cascade_subplot(self.spectrum, cascade_spectrum)
@@ -1377,6 +1375,15 @@ class Model(list):
         cascade_model = subplots[1]
         model_as_spectrum = self.generate_spectrum_from_components()
         utils._make_cascade_subplot(model_as_spectrum, cascade_model)
+
+        cascade_reminder = subplots[2]
+        reminder_array = self.spectrum.data - model_as_spectrum.data
+        reminder_spectrum = Spectrum({'data':reminder_array})
+        reminder_spectrum.axes_manager.signal_axes[0] = signal_axis
+        reminder_spectrum.axes_manager.navigation_axes[0] = navigation_axis
+        utils._make_cascade_subplot(reminder_spectrum, cascade_reminder)
+
+        #Add parameters 
 
         error_subplot = subplots[3]
         #Calculate the error

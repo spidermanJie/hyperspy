@@ -1761,6 +1761,8 @@ def _plot_cascade_parameter(
         'ro',
         label=plot_label,
         color=color)
+    subplot.ticklabel_format(style='sci') 
+    subplot.xaxis.major.formatter.set_powerlimits((3,3)) 
     return(subplot)
 
 def _plot_multiple_parameters(

@@ -1274,8 +1274,8 @@ class Model(list):
                     m.plot_components([component1, component2])")
             return
 
-        signal_axis = copy.deepcopy(self.spectrum.axes_manager.signal_axes[0])
-        navigation_axis = copy.deepcopy(self.spectrum.axes_manager.navigation_axes[0])
+#        signal_axis = copy.deepcopy(self.spectrum.axes_manager.signal_axes[0])
+#        navigation_axis = copy.deepcopy(self.spectrum.axes_manager.navigation_axes[0])
 
         if components is None:
             for component_ in self:
@@ -1288,8 +1288,8 @@ class Model(list):
                     component_.active = False
         self.generate_data_from_model()
         component_spectrum = Spectrum({'data':self.model_cube})
-        component_spectrum.axes_manager.signal_axes[0] = signal_axis
-        component_spectrum.axes_manager.navigation_axes[0] = navigation_axis
+#        component_spectrum.axes_manager.signal_axes[0] = signal_axis
+        component_spectrum.axes_manager = copy.deepcopy(self.spectrum.axes_manager)
         return(component_spectrum)
 
 #ONLY WORKS FOR A SINGLE SPECTRUM
@@ -1359,40 +1359,90 @@ class Model(list):
         else:
             np.savez(filename, model_dict=model_dict)
 
-    def plot_model_report(self, title='', filename=None, figsize=(10,10)):
-        figure, subplots = plt.subplots(2, 4, figsize=figsize)
-        
-        #Todo: 
-        #signal_axis not working for cascade_model
-        #add parameters to plot
+    def plot_model_report(
+            self, 
+            title='',
+            plot_parameters=True,
+            parameter_plot_list=None,
+            filename=None, 
+            figsize=(10,10)):
+        """Plots the spectrum, and the model in the same figure. Also plots the difference between
+        the spectrum and the model, and the normalized error between the
+        spectrum and model. Can also plot the values of the parameteres of
+        the components in the model.
 
-        signal_axis = copy.deepcopy(self.spectrum.axes_manager.signal_axes[0])
+        Parameters:
+        -----------
+        title: string
+            Title for the whole figure.
+        plot_parameters: bool (default True)
+            If true will plot the parameters in the model's component(s). Which
+            parameters will be plotted can be specified with parameter_plot_list.
+        parameter_plot_list: None or list of strings
+            If None will use the parameter list of the first component.
+            If list of strings, will plot the parameters with the same names as the
+            ones found in the list of strings. 
+        filename:
+            If None, the function will return the figure.
+            If String, will save the figure as filename.
+        figsize: tuple
+            Specifies the size of the figure.
+
+        Example:
+        --------
+        >>>> m.plot_model_report()
+
+        >>>> m.plot_model_report(parameter_plot_list=['area','center'],filename="test.png")
+        """
+
+
+        if plot_parameters:
+            if parameter_plot_list == None:
+                parameter_plot_list = []
+                for parameter in self[0].parameters:
+                    parameter_plot_list.append(parameter.name)
+            horizontal_plots = max(4, len(parameter_plot_list))
+        else:
+            horizontal_plots = 4
+
+        figure, subplots = plt.subplots(2, horizontal_plots, figsize=figsize)
+        
         navigation_axis = copy.deepcopy(self.spectrum.axes_manager.navigation_axes[0])
 
-        cascade_spectrum = subplots[0]
+        cascade_spectrum = subplots[0][0]
+        cascade_spectrum.set_title('Spectrum')
         utils._make_cascade_subplot(self.spectrum, cascade_spectrum)
 
-        cascade_model = subplots[1]
+        cascade_model = subplots[0][1]
+        cascade_model.set_title('Model')
         model_as_spectrum = self.generate_spectrum_from_components()
         utils._make_cascade_subplot(model_as_spectrum, cascade_model)
 
-        cascade_reminder = subplots[2]
+        cascade_reminder = subplots[0][2]
+        cascade_reminder.set_title('Reminder')
         reminder_array = self.spectrum.data - model_as_spectrum.data
         reminder_spectrum = Spectrum({'data':reminder_array})
-        reminder_spectrum.axes_manager.signal_axes[0] = signal_axis
-        reminder_spectrum.axes_manager.navigation_axes[0] = navigation_axis
+        reminder_spectrum.axes_manager = copy.deepcopy(self.spectrum.axes_manager)
         utils._make_cascade_subplot(reminder_spectrum, cascade_reminder)
 
-        #Add parameters 
-
-        error_subplot = subplots[3]
-        #Calculate the error
+        error_subplot = subplots[0][3]
+        error_subplot.set_title('Error')
+        error_subplot.set_ylabel(navigation_axis.units)
         spectrum_difference = np.abs(model_as_spectrum.data-self.spectrum.data)**2
         total_intensity = np.sum(self.spectrum.data, axis=1)
         error_array = np.sqrt(np.sum(spectrum_difference, axis=1))/total_intensity
-        utils._plot_cascade_parameter(error_array, error_subplot) 
+        utils._plot_cascade_parameter(error_array, error_subplot,
+                y_axis=navigation_axis.axis) 
+
+        if plot_parameters:
+            utils._plot_multiple_parameters(
+                    self, 
+                    subplots[1],
+                    parameter_plot_list=parameter_plot_list,
+                    navigation_axis=navigation_axis.axis)
 
         figure.suptitle(title)
+        #figure.tight_layout()
         if filename == None:
             return(figure)
         else:

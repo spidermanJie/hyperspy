@@ -1614,6 +1614,7 @@ def _make_heatmap_subplot(spectra, ax):
         ax.imshow(
             [data],
             cmap=plt.cm.jet,
+            interpolation='nearest',
             aspect='auto')
     else:
         y_axis = spectra.axes_manager.navigation_axes[0]
@@ -1625,6 +1626,7 @@ def _make_heatmap_subplot(spectra, ax):
                 x_axis.high_value,
                 y_axis.low_value,
                 y_axis.high_value],
+            interpolation='nearest',
             aspect='auto')
         ax.set_ylabel(y_axis.units)
     ax.set_xlabel(x_axis.units)

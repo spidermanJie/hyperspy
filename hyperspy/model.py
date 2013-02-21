@@ -1210,7 +1210,59 @@ class Model(list):
             pw.close()
             del pw
 
+    def generate_spectrum_from_components(self, components=None):
+        """Generate a spectrum from one or several components in the model.
 
-                
-                
+        Parameters
+        ----------
+        components: {list of components, None}
+            If list of components, generates spectrum from all the
+            components in the list.
+            If None plots all the components in the model, which is the
+            default.
+
+        Example:
+        --------
+        s = signals.Spectrum({'data':np.zeros(1000)})
+        g1 = components.Gaussian()
+        g2 = components.Gaussian()
+        g3 = components.Gaussian()
+        m = create_model(s)
+        m.append(g1)
+        m.append(g2)
+        m.append(g3)
+        m.generate_spectrum_from_components() # To plot all components
+        m.generate_spectrum_from_components([g1,g2])
+        m.generate_spectrum_from_components([g1])
+
+        """
+    
+        if components is None:
+            #Is there some easier way of getting the list of components
+            #in a model?
+            components = [] 
+            for component_ in self:
+                components.append(component_)
+
         
+        if not (type(components) is list):
+            raise Exception, "Input must be in the form of a list of components:\
+            m.plot_components([component1, component2]), or None if all the components\
+            should be plotted."
+
+        active_state = []
+        for component_ in self:
+            active_state.append(component_.active)
+            if component_ in components:
+                component_.active = True
+            else:
+                component_.active = False
+
+        self.generate_data_from_model()
+        component_spectrum = Spectrum({'data':self.model_cube})
+        component_spectrum.axes_manager = copy.deepcopy(self.spectrum.axes_manager)
+
+        for component_ in self:
+            component_.active = active_state.pop(0)
+
+        return(component_spectrum)

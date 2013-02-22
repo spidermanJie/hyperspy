@@ -1210,7 +1210,51 @@ class Model(list):
             pw.close()
             del pw
 
+    def get_model_as_dict(self, filename=None):
+        """Returns the spectrum, model and components in a dict.
+        If filename is supplied, the dictionary will be saved as a
+        numpy npz file.
 
-                
-                
-        
+        Parameters:
+        -----------
+        filename: string, None (default)
+        If string will save the dictionary as a numpy npz file.
+
+        Example:
+        --------
+        model_dict = m.get_model_as_dict()
+
+        m.get_model_as_dict(filename="model_data.npz")
+        """
+
+        axis = self.axes_manager.signal_axes[0].axis
+        model_dict = {}
+        component_list_dict = {}
+        for component in self:
+            component_dict = {}
+            component_dict['name'] = component.__dict__['name']
+            component_dict['type'] = component.__dict__['_id_name']
+            parameter_list_dict = {}
+            for parameter in component.__dict__['parameters']:
+                parameter_dict = {}
+                parameter_dict['name'] = parameter.__dict__['name']
+                parameter_dict['map'] = parameter.__dict__['map']
+                parameter_list_dict[parameter.__dict__['name']] = parameter_dict
+            component_dict['parameters'] = parameter_list_dict
+            component_dict['component_spectrum'] = self.generate_spectrum_from_components([component,]).data
+
+            component_list_dict[component_dict['name'] + component_dict['type']] = component_dict
+
+        model_dict['components'] = component_list_dict
+        model_dict['spectrum'] = self.spectrum.data
+        model_dict['model_spectrum'] = self.generate_spectrum_from_components().data
+        model_dict['navigational_axis'] = self.axes_manager.navigation_axes[0].axis
+        model_dict['navigational_axis_units'] = self.axes_manager.navigation_axes[0].units
+        model_dict['signal_axis'] = self.axes_manager.signal_axes[0].axis
+        model_dict['signal_axis_units'] = self.axes_manager.signal_axes[0].units
+
+
+        if filename is None:
+            return(model_dict)
+        else:
+            np.savez(filename, model_dict=model_dict)

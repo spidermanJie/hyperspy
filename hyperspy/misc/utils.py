@@ -1617,13 +1617,14 @@ def _plot_cascade_parameter(
     Parameters:
     -----------
     parameter_values: 1-D array
-    The values to be plotted.
+        The values to be plotted.
     subplot: matplotlib subplot
-    Commonly refered to as ax.
+        Commonly refered to as ax.
     plot_label: string
-    Sets the name for the plot legend.
+        Sets the name for the plot legend.
     color: string
-    Sets the color of the plot.
+        Sets the color of the plot.
+
     Example:
     --------
     _plot_cascade_parameter(gaussian_component.area.map['values'], ax)
@@ -1683,24 +1684,24 @@ def plot_parameter_report(
     Parameters:
     -----------
     component_list: list of components
-    A list of the components which parameters will be plotted.
-    If parameter_plot_list is None only the parameters who's name is
-    is present in the first component will be plotted.
-    For example: if the first parameter is a gaussian component, only the
-    parameters: area, centre and sigma will be plotted.
+        A list of the components which parameters will be plotted.
+        If parameter_plot_list is None only the parameters who's name is
+        is present in the first component will be plotted.
+        For example: if the first parameter is a gaussian component, only the
+        parameters: area, centre and sigma will be plotted.
     parameter_plot_list: None or list of strings
-    If None will use the parameter list of the first component.
-    If list of strings, will plot the parameters with the same names as the
-    ones found in the list of strings.
+        If None will use the parameter list of the first component.
+        If list of strings, will plot the parameters with the same names as the
+        ones found in the list of strings.
     title: String
-    Title of the whole figure.
-    navigation_axis: None or list of numbers
-    If None, will use the index of the value to scale the y-axis.
-    If list of numbers, has to the be same length as the size of the
-    component.
+        Title of the whole figure.
+        navigation_axis: None or list of numbers
+        If None, will use the index of the value to scale the y-axis.
+        If list of numbers, has to the be same length as the size of the
+        component.
     filename:
-    If None, the function will return the figure.
-    If String, will save the figure as filename
+        If None, the function will return the figure.
+        If String, will save the figure as filename
 
     Example:
     --------

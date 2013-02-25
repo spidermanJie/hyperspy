@@ -1605,4 +1605,130 @@ def closest_nice_number(number):
     oom = 10**math.floor(math.log10(number))
     return oom * (number // oom)
     
+def _plot_cascade_parameter(
+        parameter_values,
+        subplot,
+        y_axis=None,
+        plot_label='',
+        color='black'):
+    """Plots an array in a matplotlib subplot.
+    Especially suited to plot parameter arrays
 
+    Parameters:
+    -----------
+    parameter_values: 1-D array
+    The values to be plotted.
+    subplot: matplotlib subplot
+    Commonly refered to as ax.
+    plot_label: string
+    Sets the name for the plot legend.
+    color: string
+    Sets the color of the plot.
+    Example:
+    --------
+    _plot_cascade_parameter(gaussian_component.area.map['values'], ax)
+    """
+    
+    if y_axis == None:
+        y_axis = range(len(parameter_values))
+    
+    subplot.plot(
+        parameter_values,
+        y_axis,
+        'ro',
+        label=plot_label,
+        color=color)
+    subplot.ticklabel_format(style='sci')
+    subplot.xaxis.major.formatter.set_powerlimits((3,3))
+    return(subplot)
+
+def _plot_multiple_parameters(
+        component_list,
+        subplots,
+        parameter_plot_list=None,
+        title='',
+        navigation_axis=None):
+
+    #Must be some better way to get a color list...
+    color_list = ['blue', 'green', 'red', 'cyan', 'yellow', 'black']
+
+    if parameter_plot_list == None:
+        parameter_plot_list = []
+        for parameter in component_list[0].parameters:
+            parameter_plot_list.append(parameter.name)
+
+    for ax, parameter_name in zip(subplots, parameter_plot_list):
+        for component_index, component in enumerate(component_list):
+            for parameter in component.parameters:
+                if parameter_name == parameter.name:
+                    _plot_cascade_parameter(
+                            parameter.map['values'],
+                            ax,
+                            plot_label=component.name,
+                            color=color_list[component_index],
+                            y_axis=navigation_axis)
+                    ax.set_title(parameter_name)
+                    ax.legend()
+                    ax.grid(True)
+
+def plot_parameter_report(
+        component_list,
+        parameter_plot_list=None,
+        title='',
+        navigation_axis=None,
+        figsize=(10,10),
+        filename=None):
+    """Plots parameters of one or several components in a cascade fashion.
+
+    Parameters:
+    -----------
+    component_list: list of components
+    A list of the components which parameters will be plotted.
+    If parameter_plot_list is None only the parameters who's name is
+    is present in the first component will be plotted.
+    For example: if the first parameter is a gaussian component, only the
+    parameters: area, centre and sigma will be plotted.
+    parameter_plot_list: None or list of strings
+    If None will use the parameter list of the first component.
+    If list of strings, will plot the parameters with the same names as the
+    ones found in the list of strings.
+    title: String
+    Title of the whole figure.
+    navigation_axis: None or list of numbers
+    If None, will use the index of the value to scale the y-axis.
+    If list of numbers, has to the be same length as the size of the
+    component.
+    filename:
+    If None, the function will return the figure.
+    If String, will save the figure as filename
+
+    Example:
+    --------
+    >>>> plot_parameter_report(
+    [gaussian1, gaussian2],
+    parameter_plot_list=["area","sigma"],
+    navigation_axis=model.axes_manager.navigation_axes[0].axis,
+    title="Gaussians")
+    """
+
+    if parameter_plot_list == None:
+        parameter_plot_list = []
+        for parameter in component_list[0].parameters:
+            parameter_plot_list.append(parameter.name)
+
+    number_of_parameters = len(parameter_plot_list)
+    figure, subplots = plt.subplots(1, number_of_parameters, sharey=True,
+            figsize=figsize)
+    
+    _plot_multiple_parameters(
+        component_list,
+        subplots,
+        parameter_plot_list=parameter_plot_list,
+        title=title,
+        navigation_axis=navigation_axis)
+    figure.suptitle(title)
+
+    if filename == None:
+        return(figure)
+    else:
+        figure.savefig(filename)

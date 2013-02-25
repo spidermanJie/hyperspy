@@ -1706,12 +1706,17 @@ def plot_parameter_report(
     Example:
     --------
     >>>> plot_parameter_report(
-    [gaussian1, gaussian2],
-    parameter_plot_list=["area","sigma"],
-    navigation_axis=model.axes_manager.navigation_axes[0].axis,
-    title="Gaussians")
+            [gaussian1, gaussian2],
+            parameter_plot_list=["area","sigma"],
+            navigation_axis=model.axes_manager.navigation_axes[0].axis,
+            title="Gaussians")
     """
 
+    if not ((type(parameter_plot_list) is tuple) or (type(parameter_plot_list) is list)):
+        raise ValueError(
+                "The parameter_plot_list must be in the form\n "
+                "of a tuple or list. For example: parameter_plot_list=('area',) ")
+    
     if parameter_plot_list == None:
         parameter_plot_list = []
         for parameter in component_list[0].parameters:
@@ -1720,6 +1725,9 @@ def plot_parameter_report(
     number_of_parameters = len(parameter_plot_list)
     figure, subplots = plt.subplots(1, number_of_parameters, sharey=True,
             figsize=figsize)
+
+    if number_of_parameters == 1:
+        subplots = [subplots]
     
     _plot_multiple_parameters(
         component_list,

@@ -533,7 +533,7 @@ reconstruction created using either get_decomposition_model or get_bss_model met
             (slice(None), ) * axis + (slice(cut_node[i], cut_node[i + 1]),
             Ellipsis)]
             signal_dict['data'] = data
-            s = Signal(signal_dict)
+            s = self.__class__(signal_dict)
             # TODO: When copying plotting does not work
 #            s.axes = copy.deepcopy(self.axes_manager)
             splitted.append(s)

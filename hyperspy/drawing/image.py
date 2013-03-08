@@ -142,7 +142,7 @@ class ImagePlot:
         width = abs(self._extent[1] - self._extent[0])
         figsize = np.array((width * wfactor, height)) * max_size / max(
                            (width * wfactor, height))
-        self.figure = utils.create_figure(
+        self.figure = utils.hspy_figure(
                         figsize=figsize.clip(min_size, max_size))
         self.figure.canvas.mpl_connect('draw_event', self._on_draw)
 

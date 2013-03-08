@@ -42,40 +42,6 @@ def does_figure_object_exists(fig_obj):
             fig_obj = None
             return False
                 
-def create_figure(window_title=None,
-                  _on_figure_window_close=None,
-                  hspy_obj=None,
-                  *args, **kwargs):
-    """Create a matplotlib figure.
-    
-    This function adds the possibility to execute another function 
-    when the figure is closed and to easily set the window title. Any
-    args and kwarg are passed to the plt.figure function
-    
-    Parameters
-    ----------
-    window_title : string
-    _on_figure_window_close : function
-    hspy_obj : {None, anything}
-        If not None a Hyperspy button is added to the mpl toolbar. See
-        hspy_figure. 
-    
-    Returns
-    -------
-    fig : plt.figure    
-    
-    """
-    if hspy_obj is None:
-        fig = plt.figure(*args, **kwargs)
-    else:
-        fig = hspy_figure(*args, **kwargs)
-        fig.canvas.hspy_obj = hspy_obj
-    if window_title is not None:
-        fig.canvas.set_window_title(window_title)
-    if _on_figure_window_close is not None:
-        on_figure_window_close(fig, _on_figure_window_close)
-    return fig
-                
 def on_figure_window_close(figure, function):
     """Connects a close figure signal to a given function
     
@@ -174,54 +140,69 @@ def subplot_parameters(fig):
     bottom = fig.subplotpars.bottom
     return (left, bottom, right, top, wspace, hspace)
     
-def hspy_figure(*args, **kwargs):
-    """Create a matplotlib figure that has a Hyperspy button in its
-    navivation toolbar.
+def hspy_figure(extra_buttons=None,
+                _on_figure_window_close=None,
+                *args, **kwargs):
+    """Create a matplotlib figure with some extra features.
+    
+    This function adds the possibility to execute a function 
+    when the figure is closed and to add extra buttons.
+    
     
     The button call the gui method of figure.canvas.hspy_obj if it 
     exists.
     
     Parameters
-    ----------    
-    All args and kwargs are passed to plt.figure
+    ----------
+    extra_buttons : {tuple of dictionaries}
     
+        
+    All extra args and kwargs are passed to plt.figure
+    
+
     Returns
     -------
-    
-    f : plt.figure
+    fig : plt.figure    
     
     """
+    if extra_buttons is None:
+        fig = plt.figure(*args, **kwargs)
+    else:
+        for button in extra_buttons:
+            if button is None: # It is a separator
+                NavigationToolbar2.toolitems += ((None,)*4,)
+            else:                        
+                NavigationToolbar2.toolitems += (
+                    (button['text'], 
+                     button['tooltip'], 
+                     button['image'],
+                     "hspy_" + button['method'] 
+                     ),)
+                exec(     
+                "def action_wrapper(self, *args):"
+                "    self.canvas.hspy_%s.gui()" % button['method'])
+                setattr(NavigationToolbar2, "hspy_" + button['method'],
+                        action_wrapper)
+        
+        # The buttons image files have to be in 
+        # mpl.rcParams['datapath']/images but the hspy logo is not there.
+        # As a workaround we have a copy of the NavigationToolbar button
+        # images in data/mpl/images and we set the temporarily mpl's
+        # datapath to point to hspy/data/mpl, create the figure and 
+        # undo the changes.
+        button_images = os.path.expandvars(
+        os.path.join(
+            os.path.dirname(hyperspy.__file__),
+            'data',
+            'mpl'))
+        mpl_datapath = mpl.rcParams['datapath']
+        mpl.rcParams['datapath'] = button_images
+        fig = plt.figure(*args, **kwargs)
+        mpl.rcParams['datapath'] = mpl_datapath
+        NavigationToolbar2.toolitems = NavigationToolbar2.toolitems[
+            :-len(extra_buttons)]
 
-    def hspy_gui(self, *args):
-        if hasattr(self.canvas, 'hspy_obj'):
-            if hasattr("self.canvas.hspy_obj", "gui"):
-                self.canvas.hspy_obj.gui()
-                
-    # Add the new button and a separator and the hspy_gui attribute
-    NavigationToolbar2.toolitems += (
-        (None, None, None, None),
-        ('Hyperspy', # the text of the button
-         'Hyperspy configuration', # the tooltip shown on hover
-         'hyperspy_logo', # name of the image for the button
-         'hspy_gui' # name of the method in NavigationToolbar2 to call
-         ),)
-    NavigationToolbar2.hspy_gui = hspy_gui
+    if _on_figure_window_close is not None:
+        on_figure_window_close(fig, _on_figure_window_close)
     
-    # The buttons image files have to be in 
-    # mpl.rcParams['datapath']/images but the hspy logo is not there.
-    # As a workaround we have a copy of the NavigationToolbar button
-    # images in data/mpl/images and we set the temporarily mpl's
-    # datapath to point to hspy/data/mpl, create the figure and 
-    # undo the changes.
-    button_images = os.path.expandvars(
-    os.path.join(
-        os.path.dirname(hyperspy.__file__),
-        'data',
-        'mpl'))
-    mpl_datapath = mpl.rcParams['datapath']
-    mpl.rcParams['datapath'] = button_images
-    f = plt.figure(*args, **kwargs)
-    mpl.rcParams['datapath'] = mpl_datapath
-    NavigationToolbar2.toolitems = NavigationToolbar2.toolitems[:-2]
-    
-    return f
+    return fig

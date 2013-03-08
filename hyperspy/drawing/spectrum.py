@@ -47,7 +47,7 @@ class SpectrumFigure():
         self.create_axis()
 
     def create_figure(self):
-        self.figure = utils.create_figure()
+        self.figure = utils.hspy_figure()
         utils.on_figure_window_close(self.figure, self.close)
         self.figure.canvas.mpl_connect('draw_event', self._on_draw)
 

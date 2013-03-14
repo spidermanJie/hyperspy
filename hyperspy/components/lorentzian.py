@@ -92,7 +92,10 @@ class Lorentzian(Component):
         )/(np.pi * (self.gamma.value**2 + (x - self.centre.value)**2)**2)
         
     def estimate_parameters(self, signal, E1, E2, only_current = False):
-        """Estimate the gaussian by calculating the momenta.
+        """Estimate the parameters for the lorentzian by calculating the momenta.
+        The parameters are really calculated for a gaussian, but the parameters
+        are set sufficiently close to enable the regular fitting function to
+        work.
 
         Parameters
         ----------
@@ -121,7 +124,7 @@ class Lorentzian(Component):
         import numpy as np
         from hyperspy.hspy import *
         from hyperspy.signals.spectrum import Spectrum  
-        g = components.Gaussian()
+        l = components.Lorentzian()
         x = np.arange(-10,10, 0.01)
         data = np.zeros((32,32,2000))
         data[:] = g.function(x).reshape((1,1,2000))

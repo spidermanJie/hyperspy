@@ -1741,3 +1741,34 @@ def plot_parameter_report(
         return(figure)
     else:
         figure.savefig(filename)
+
+def _parameter_difference_subplot(subplot, component1, component2,
+        parameter_name, y_axis=None, plot_label='Difference'):
+    for _parameter in component1.parameters:
+        if _parameter.name == parameter_name:
+            parameter1 = _parameter
+    for _parameter in component2.parameters:
+        if _parameter.name == parameter_name:
+            parameter2 = _parameter
+
+    parameter_difference = parameter1.map['values'] - parameter2.map['values']
+
+    subplot_label = component1.name + "," + component2.name + "," + parameter_name
+
+    _plot_cascade_parameter(
+            parameter_difference,
+            subplot,
+            plot_label=plot_label,
+            y_axis=y_axis)
+    subplot.set_title(subplot_label)
+    subplot.legend()
+    subplot.grid(True)
+
+def plot_parameter_difference(component1, component2, parameter_name,
+        y_axis=None, plot_label='Difference'):
+
+    fig = plt.figure()
+    subplot = fig.add_subplot(111)
+
+    _parameter_difference_subplot(subplot, component1, component2,
+        parameter_name, y_axis=y_axis, plot_label=plot_label)

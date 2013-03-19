@@ -1744,12 +1744,33 @@ def plot_parameter_report(
 
 def _parameter_difference_subplot(subplot, component1, component2,
         parameter_name, y_axis=None, plot_label='Difference'):
+    """Plots the difference between a specific parameter in two components.
+
+    Parameters:
+    -----------
+    subplot: a matplotlib subplot object
+    component1: hyperspy component object
+    component2: hyperspy component object 
+    parameter_name: string
+        Name of the parameter whos difference will be plotted.
+    y_axis: list of numbers, optional
+        Scaling for the y-axis
+    plot_label: string, optional
+
+    """
+
+    parameter1, parameter2 = None, None
     for _parameter in component1.parameters:
         if _parameter.name == parameter_name:
             parameter1 = _parameter
     for _parameter in component2.parameters:
         if _parameter.name == parameter_name:
             parameter2 = _parameter
+
+    if (parameter1 is None) or (parameter2 is None): 
+        raise Exception(
+                "The parameter_name " + parameter_name + 
+                " was not found in both components")
 
     parameter_difference = parameter1.map['values'] - parameter2.map['values']
 
@@ -1766,6 +1787,29 @@ def _parameter_difference_subplot(subplot, component1, component2,
 
 def plot_parameter_difference(component1, component2, parameter_name,
         y_axis=None, plot_label='Difference'):
+    """Plots the difference between a specific parameter in two components.
+
+    Parameters:
+    -----------
+    component1: hyperspy component object
+    component2: hyperspy component object 
+    parameter_name: string
+        Name of the parameter whos difference will be plotted.
+    y_axis: list of numbers, optional
+        Scaling for the y-axis
+    plot_label: string, optional
+
+    Example:
+    --------
+    s = load("some_spectrum")
+    m = create_model(s)
+    v1 = components.Voigt()
+    v2 = components.Voigt()
+    m.append(v1)
+    m.append(v2)
+    utils.plot_parameter_difference(v1, v2, 'centre')
+
+    """
 
     fig = plt.figure()
     subplot = fig.add_subplot(111)

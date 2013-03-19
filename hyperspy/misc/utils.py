@@ -1608,6 +1608,46 @@ def closest_nice_number(number):
     oom = 10**math.floor(math.log10(number))
     return oom * (number // oom)
     
+def are_aligned(shape1, shape2):
+    """Check if two numpy arrays are aligned.
+    
+    Parameters
+    ----------
+    shape1, shape2 : iterable
+       
+    Returns
+    -------
+    isaligned : bool
+    
+    """
+    isaligned = True
+    shape1 = list(shape1)
+    shape2 = list(shape2)
+    try:
+        while isaligned is True:
+            dim1 = shape1.pop()
+            dim2 = shape2.pop()
+            if dim1 != dim2 and (dim1 != 1 and dim2 != 1):
+                isaligned = False
+    except IndexError:
+        return isaligned
+    return isaligned
+    
+def homogenize_ndim(*args):
+    """Given any number of arrays returns the same arrays
+    reshaped by adding facing dimensions of size 1.
+    
+    """
+    
+    max_len = max([len(ary.shape) for ary in args])
+    
+    return [ary.reshape((1,) * (max_len - len(ary.shape)) + ary.shape)
+            for ary in args]
+                    
+    
+    
+    
+
 def _plot_cascade_parameter(
         parameter_values,
         subplot,
@@ -1785,7 +1825,6 @@ def _parameter_difference_subplot(subplot, component1, component2,
     subplot.set_title(subplot_label)
     subplot.legend()
     subplot.grid(True)
-
 def plot_parameter_difference(component1, component2, parameter_name,
         y_axis=None, plot_label='Difference', filename=None):
     """Plots the difference between a specific parameter in two components.

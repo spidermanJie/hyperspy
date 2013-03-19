@@ -1780,7 +1780,7 @@ def plot_parameter_report(
         figure.savefig(filename)
 
 def _parameter_difference_subplot(subplot, component1, component2,
-        parameter_name, y_axis=None, plot_label='Difference'):
+        parameter_name, y_axis=None):
     """Plots the difference between a specific parameter in two components.
 
     Parameters:
@@ -1792,7 +1792,6 @@ def _parameter_difference_subplot(subplot, component1, component2,
         Name of the parameter whos difference will be plotted.
     y_axis: list of numbers, optional
         Scaling for the y-axis
-    plot_label: string, optional
 
     """
 
@@ -1811,20 +1810,23 @@ def _parameter_difference_subplot(subplot, component1, component2,
 
     parameter_difference = parameter1.map['values'] - parameter2.map['values']
 
-    subplot_label = component1.name + "," + component2.name + "," + parameter_name
+    subplot_label = component1.name + "," + component2.name + "," +\
+    parameter_name + "," + "difference"
 
     _plot_cascade_parameter(
             parameter_difference,
             subplot,
-            plot_label=plot_label,
             y_axis=y_axis)
     subplot.set_title(subplot_label)
-    subplot.legend()
     subplot.grid(True)
 
 def plot_parameter_difference(component1, component2, parameter_name,
-        y_axis=None, plot_label='Difference', filename=None):
+        y_axis=None, title='', filename=None):
     """Plots the difference between a specific parameter in two components.
+    Useful in plotting changes in fine structure. For example if one uses
+    Gaussians to fit the different whitelines in an EELS-spectrum, and wants to
+    see how the relative positions of the centre parameter in the Gaussians 
+    change over a line scan.
 
     Parameters:
     -----------
@@ -1834,7 +1836,11 @@ def plot_parameter_difference(component1, component2, parameter_name,
         Name of the parameter whos difference will be plotted.
     y_axis: list of numbers, optional
         Scaling for the y-axis
-    plot_label: string, optional
+    title: string, optinal
+        Title of the figure
+    filename: None or string, optional 
+        If None, will return a matplotlib figure object
+        If String, will save the figure as a file
 
     Example:
     --------
@@ -1856,7 +1862,8 @@ def plot_parameter_difference(component1, component2, parameter_name,
     subplot = figure.add_subplot(111)
 
     _parameter_difference_subplot(subplot, component1, component2,
-        parameter_name, y_axis=y_axis, plot_label=plot_label)
+        parameter_name, y_axis=y_axis)
+    figure.suptitle(title)
 
     if filename == None:
         return(figure)
@@ -1903,10 +1910,12 @@ def _parameter_normalized_subplot(subplot, component_list, parameter_name,
         subplot.legend()
         subplot.grid(True)
 
-
 def plot_normalized_parameter(component_list, parameter_name, title='',
         filename=None):
     """Plots the normalized values of a list of specific parameters in components.
+    Useful in plotting changes in fine structure. For example if one uses
+    Gaussians to fit the different whitelines in an EELS-spectrum, and wants to
+    see how the area parameter in the Gaussians change over a line scan.
 
     Parameters:
     -----------

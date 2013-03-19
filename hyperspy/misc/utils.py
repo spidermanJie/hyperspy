@@ -1695,7 +1695,7 @@ def plot_parameter_report(
         ones found in the list of strings.
     title: String
         Title of the whole figure.
-        navigation_axis: None or list of numbers
+    navigation_axis: None or list of numbers
         If None, will use the index of the value to scale the y-axis.
         If list of numbers, has to the be same length as the size of the
         component.

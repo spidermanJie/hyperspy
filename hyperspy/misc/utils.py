@@ -52,6 +52,9 @@ from hyperspy import messages
 from hyperspy.gui import messages as messagesui
 import hyperspy.defaults_parser
 
+#Must be some better way to get a color list...
+color_list = ['blue', 'green', 'red', 'cyan', 'yellow', 'black']
+
 def dump_dictionary(file, dic, string = 'root', node_separator = '.',
                     value_separator = ' = '):
     for key in dic.keys():
@@ -1650,8 +1653,6 @@ def _plot_multiple_parameters(
         title='',
         navigation_axis=None):
 
-    #Must be some better way to get a color list...
-    color_list = ['blue', 'green', 'red', 'cyan', 'yellow', 'black']
 
     if parameter_plot_list == None:
         parameter_plot_list = []
@@ -1786,7 +1787,7 @@ def _parameter_difference_subplot(subplot, component1, component2,
     subplot.grid(True)
 
 def plot_parameter_difference(component1, component2, parameter_name,
-        y_axis=None, plot_label='Difference'):
+        y_axis=None, plot_label='Difference', filename=None):
     """Plots the difference between a specific parameter in two components.
 
     Parameters:
@@ -1809,6 +1810,10 @@ def plot_parameter_difference(component1, component2, parameter_name,
     m.append(v2)
     utils.plot_parameter_difference(v1, v2, 'centre')
 
+    See also:
+    ---------
+    utils.plot_normalized_parameter
+
     """
 
     fig = plt.figure()
@@ -1816,3 +1821,93 @@ def plot_parameter_difference(component1, component2, parameter_name,
 
     _parameter_difference_subplot(subplot, component1, component2,
         parameter_name, y_axis=y_axis, plot_label=plot_label)
+
+    if filename == None:
+        return(figure)
+    else:
+        figure.savefig(filename)
+
+def _parameter_normalized_subplot(subplot, component_list, parameter_name,
+        navigation_axis=None): 
+    """Plots the normalized values of a list of specific parameters in components.
+
+    Parameters:
+    -----------
+    subplot: matplotlib subplot object
+    component_list: a list of hyperspy component objects
+    parameter_name: string
+        name of the parameter which is to be plotted
+
+    See also:
+    ---------
+    utils.plot_normalized_parameter
+
+    """
+    parameter_list = []
+    for _component in component_list:
+        for _parameter in _component.parameters:
+            if _parameter.name == parameter_name:
+                parameter_list.append(_parameter)
+
+    #Sum of all the parameters at each position
+    total_parameters_value = np.zeros(
+            len(parameter_list[0].map['values']))
+    for _parameter in parameter_list:
+        total_parameters_value += _parameter.map['values']
+
+    for _index, (_parameter, _component) in enumerate(
+            zip(parameter_list,component_list)):
+        _plot_cascade_parameter(
+                _parameter.map['values']/total_parameters_value,
+                subplot,
+                plot_label=_component.name,
+                color=color_list[_index],
+                y_axis=navigation_axis)
+        subplot.set_title(parameter_name)
+        subplot.legend()
+        subplot.grid(True)
+
+
+def plot_normalized_parameter(component_list, parameter_name, title='',
+        filename=None):
+    """Plots the normalized values of a list of specific parameters in components.
+
+    Parameters:
+    -----------
+    component_list: a list of hyperspy component objects
+    parameter_name: string
+        name of the parameter which is to be plotted
+    title: string, optional
+        title of the matplotlib figure
+    filename: None or string, optional 
+        If None, will return a matplotlib figure object
+        If String, will save the figure as a file
+
+    Example:
+    s = load("some_spectrum")
+    m = create_model(s)
+    v1 = components.Voigt()
+    v2 = components.Voigt()
+    m.append(v1)
+    m.append(v2)
+    utils.plot_normalized_parameter([v1, v2], 'area')
+
+    utils.plot_normalized_parameter([v1, v2], 'area', 
+    title="v1 and v2",filename="v1_and_v2.png")
+
+    See also:
+    ---------
+    utils.plot_parameter_difference 
+
+    """
+
+    figure = plt.figure()
+    subplot = figure.add_subplot(111)
+
+    _parameter_normalized_subplot(subplot, component_list, parameter_name)
+    figure.suptitle(title)
+    
+    if filename == None:
+        return(figure)
+    else:
+        figure.savefig(filename)

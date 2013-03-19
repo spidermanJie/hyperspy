@@ -1644,10 +1644,6 @@ def homogenize_ndim(*args):
     return [ary.reshape((1,) * (max_len - len(ary.shape)) + ary.shape)
             for ary in args]
                     
-    
-    
-    
-
 def _plot_cascade_parameter(
         parameter_values,
         subplot,
@@ -1825,6 +1821,7 @@ def _parameter_difference_subplot(subplot, component1, component2,
     subplot.set_title(subplot_label)
     subplot.legend()
     subplot.grid(True)
+
 def plot_parameter_difference(component1, component2, parameter_name,
         y_axis=None, plot_label='Difference', filename=None):
     """Plots the difference between a specific parameter in two components.
@@ -1855,8 +1852,8 @@ def plot_parameter_difference(component1, component2, parameter_name,
 
     """
 
-    fig = plt.figure()
-    subplot = fig.add_subplot(111)
+    figure = plt.figure()
+    subplot = figure.add_subplot(111)
 
     _parameter_difference_subplot(subplot, component1, component2,
         parameter_name, y_axis=y_axis, plot_label=plot_label)
